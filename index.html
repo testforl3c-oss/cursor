@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CASB Cloud Protection Dashboard</title>
+    <style>
+      :root {
+        --bg: #0b1220;
+        --panel: #111a2e;
+        --panel-elev: #0e172a;
+        --muted: #93a4bf;
+        --text: #e6edf7;
+        --text-soft: #c7d2e6;
+        --border: #20304d;
+        --chip: #1b2742;
+        --brand: #6aa3ff;
+        --brand-2: #7c4dff;
+        --good: #10b981;
+        --info: #3b82f6;
+        --p1: #ef4444;
+        --p2: #f59e0b;
+        --p3: #fbbf24;
+        --ok: #22c55e;
+        --shadow: rgba(0,0,0,0.35);
+        --accent-grad: linear-gradient(135deg, rgba(122, 162, 247, 0.2), rgba(124, 77, 255, 0.18));
+      }
+
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        background: radial-gradient(1000px 500px at 80% -100px, rgba(106,163,255,0.16), transparent 60%),
+                    radial-gradient(700px 600px at -200px -100px, rgba(124,77,255,0.18), transparent 60%),
+                    var(--bg);
+        color: var(--text);
+      }
+
+      .container {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 20px 16px 80px 16px;
+      }
+
+      .topbar {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 16px;
+        align-items: start;
+        margin-bottom: 18px;
+      }
+      .card {
+        background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent 35%), var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px 14px 12px 14px;
+        box-shadow: 0 10px 24px var(--shadow);
+      }
+      .topbar .card { padding: 12px; }
+
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .controls-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+      .controls .field {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--panel-elev);
+        border: 1px solid var(--border);
+        padding: 8px 10px;
+        border-radius: 10px;
+      }
+      label { color: var(--muted); font-size: 12px; }
+      select, input[type="search"] {
+        background: transparent;
+        color: var(--text);
+        border: none;
+        outline: none;
+        font-size: 14px;
+        min-width: 140px;
+      }
+      input[type="search"] { min-width: 240px; }
+
+      .segmented {
+        display: inline-flex;
+        background: var(--panel-elev);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 4px;
+        gap: 4px;
+      }
+      .segmented input { display: none; }
+      .segmented label {
+        user-select: none;
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        color: var(--text);
+        background: transparent;
+        border: 1px solid transparent;
+      }
+      .segmented input:checked + label {
+        background: var(--chip);
+        border-color: var(--border);
+      }
+
+      .actions { display: inline-flex; gap: 8px; }
+      .btn {
+        appearance: none;
+        border: 1px solid var(--border);
+        background: var(--panel-elev);
+        color: var(--text);
+        padding: 8px 12px;
+        border-radius: 10px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .btn.primary { background: var(--brand); border-color: rgba(255,255,255,0.12); color: #0b1220; font-weight: 600; }
+
+      .kpi {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: var(--panel-elev);
+        border: 1px solid var(--border);
+        padding: 10px 12px;
+        border-radius: 12px;
+      }
+      .kpi + .kpi { margin-top: 8px; }
+      .kpi-title { color: var(--muted); font-size: 12px; }
+      .kpi-value { font-weight: 700; font-size: 18px; }
+      .delta { font-size: 12px; }
+      .delta.up { color: var(--p2); }
+      .delta.down { color: var(--ok); }
+
+      .section-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 2px 2px 10px 2px;
+      }
+      .section-title h3 { margin: 0; font-size: 14px; letter-spacing: 0.2px; color: var(--text-soft); }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        background: var(--chip);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        font-size: 12px;
+        color: var(--text);
+      }
+
+      .grid-critical {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+      .grid-overview {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+
+      .mini-trend {
+        height: 36px;
+        background: var(--accent-grad);
+        border: 1px dashed var(--border);
+        border-radius: 10px;
+        margin-top: 8px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 4px 8px;
+        font-size: 12px;
+        background: var(--chip);
+        border: 1px solid var(--border);
+      }
+      .pill.p1 { background: color-mix(in oklab, var(--p1) 20%, transparent); border-color: color-mix(in oklab, var(--p1) 40%, var(--border)); }
+      .pill.p2 { background: color-mix(in oklab, var(--p2) 20%, transparent); border-color: color-mix(in oklab, var(--p2) 40%, var(--border)); }
+      .pill.p3 { background: color-mix(in oklab, var(--p3) 20%, transparent); border-color: color-mix(in oklab, var(--p3) 40%, var(--border)); }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      .table th, .table td {
+        padding: 10px 10px;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+      }
+      .table th { color: var(--muted); font-weight: 600; }
+      .table tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+      .tabs {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin: 6px 2px 10px 2px;
+      }
+      .tab-btn {
+        background: var(--panel-elev);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .tab-btn.active { background: var(--brand); color: #0b1220; border-color: rgba(255,255,255,0.12); font-weight: 700; }
+      .panel { display: none; }
+      .panel.active { display: block; }
+
+      .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .kpi-row .kpi { padding: 12px; }
+
+      .two-col { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+      .flex { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+      .right { margin-left: auto; }
+      .muted { color: var(--muted); }
+
+      .banner {
+        display: none;
+        align-items: center;
+        gap: 10px;
+        background: color-mix(in oklab, var(--p1) 18%, transparent);
+        border: 1px solid color-mix(in oklab, var(--p1) 45%, var(--border));
+        padding: 10px 12px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+      }
+      .banner.show { display: flex; }
+      .banner .btn { background: transparent; }
+
+      @media (max-width: 1100px) {
+        .grid-critical { grid-template-columns: repeat(2, 1fr); }
+        .two-col { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 640px) {
+        .topbar { grid-template-columns: 1fr; }
+        .grid-critical { grid-template-columns: 1fr; }
+        input[type="search"] { min-width: 180px; width: 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div id="p1-banner" class="banner" role="status" aria-live="polite">
+        <span class="pill p1">P1</span>
+        <strong>6 critical alerts</strong>
+        <span class="muted">require attention</span>
+        <div class="right actions">
+          <button class="btn">Review now</button>
+          <button class="btn" onclick="this.parentElement.parentElement.classList.remove('show')">Dismiss</button>
+        </div>
+      </div>
+
+      <header class="topbar">
+        <div class="card controls" aria-label="Global controls">
+          <div class="controls-row">
+            <div class="field">
+              <label for="time-range">Time</label>
+              <select id="time-range" aria-label="Time range">
+                <option>Last 24h</option>
+                <option selected>Last 7 days</option>
+                <option>Last 30 days</option>
+                <option>Custom…</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="scope">Scope</label>
+              <select id="scope" aria-label="Scope">
+                <option selected>All tenants</option>
+                <option>Dept: Engineering</option>
+                <option>Dept: Finance</option>
+                <option>Geo: EU</option>
+                <option>Geo: US</option>
+              </select>
+            </div>
+            <div class="segmented" role="group" aria-label="Severity">
+              <input type="checkbox" id="sev-p1" checked>
+              <label for="sev-p1"><span class="pill p1">P1</span></label>
+              <input type="checkbox" id="sev-p2" checked>
+              <label for="sev-p2"><span class="pill p2">P2</span></label>
+              <input type="checkbox" id="sev-p3" checked>
+              <label for="sev-p3"><span class="pill p3">P3</span></label>
+            </div>
+            <div class="segmented" role="group" aria-label="App scope">
+              <input type="checkbox" id="scope-sanctioned" checked>
+              <label for="scope-sanctioned">Sanctioned</label>
+              <input type="checkbox" id="scope-shadow" checked>
+              <label for="scope-shadow">Shadow</label>
+              <input type="checkbox" id="scope-banned" checked>
+              <label for="scope-banned">Banned</label>
+            </div>
+            <div class="field" style="flex:1 1 240px">
+              <label for="search">Search</label>
+              <input type="search" id="search" placeholder="user, app, file, IP, token">
+            </div>
+          </div>
+          <div class="controls-row">
+            <div class="actions">
+              <button class="btn">Save view</button>
+              <button class="btn">Export</button>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="display:flex;align-items:center;gap:10px;justify-content:space-between">
+          <div class="flex">
+            <span class="badge"><span style="width:8px;height:8px;border-radius:999px;background:var(--p1);display:inline-block"></span> P1</span>
+            <span class="badge"><span style="width:8px;height:8px;border-radius:999px;background:var(--p2);display:inline-block"></span> P2</span>
+            <span class="badge"><span style="width:8px;height:8px;border-radius:999px;background:var(--p3);display:inline-block"></span> P3</span>
+          </div>
+          <div class="muted">Dashboard: CASB Cloud Protection</div>
+        </div>
+      </header>
+
+      <main>
+        <section aria-labelledby="critical-title">
+          <div class="section-title">
+            <h3 id="critical-title">Critical insights</h3>
+            <span class="muted">Risks, sensitive exposure, and policy violations</span>
+          </div>
+          <div class="grid-critical">
+            <div class="card">
+              <div class="section-title"><h3>Risk & Threat Indicators</h3><span class="pill">Live</span></div>
+              <div class="kpi"><div><div class="kpi-title">High-risk shadow apps (rep < 40)</div></div><div class="kpi-value">12 <span class="delta up">▲ 2</span></div></div>
+              <div class="kpi"><div><div class="kpi-title">Anomalies detected</div></div><div class="kpi-value">27 <span class="delta up">▲</span></div></div>
+              <div class="kpi"><div class="kpi-title">Alerts by severity</div><div class="flex"><span class="pill p1">P1: 6</span><span class="pill p2">P2: 14</span><span class="pill p3">P3: 33</span></div></div>
+              <div class="kpi"><div class="kpi-title">Banned app attempts</div><div class="kpi-value">421 <span class="muted">(12% allowed)</span></div></div>
+              <div class="mini-trend" aria-hidden="true"></div>
+            </div>
+            <div class="card">
+              <div class="section-title"><h3>Sensitive Data Exposure</h3><span class="pill">DLP</span></div>
+              <div class="kpi"><div class="kpi-title">Unsanctioned uploads/downloads</div><div class="kpi-value">3.2 GB <span class="delta up">▲</span></div></div>
+              <div class="kpi"><div class="kpi-title">Publicly shared files</div><div class="kpi-value">68 <span class="delta down">▼</span></div></div>
+              <div class="kpi"><div class="kpi-title">DLP violations (PII/PCI)</div><div class="kpi-value">41 / 12</div></div>
+              <div class="mini-trend" aria-hidden="true"></div>
+            </div>
+            <div class="card">
+              <div class="section-title"><h3>User & Actor Risks</h3><span class="pill">Accounts</span></div>
+              <div class="kpi"><div class="kpi-title">Top risky users</div><div class="kpi-value">5 <span class="muted">(<span title="risk score">≤ 40</span>)</span></div></div>
+              <div class="kpi"><div class="kpi-title">Compromised accounts</div><div class="kpi-value">4</div></div>
+              <div class="kpi"><div class="kpi-title">Insider threat signals</div><div class="kpi-value">11</div></div>
+              <div class="mini-trend" aria-hidden="true"></div>
+            </div>
+            <div class="card">
+              <div class="section-title"><h3>Policy Violations</h3><span class="pill">Policies</span></div>
+              <div class="kpi"><div class="kpi-title">Shadow IT footprint</div><div class="kpi-value">184 apps <span class="delta up">▲</span></div></div>
+              <div class="kpi"><div class="kpi-title">Geo-based violations</div><div class="kpi-value">22</div></div>
+              <div class="kpi"><div class="kpi-title">Access to unsanctioned apps</div><div class="kpi-value">1.4k</div></div>
+              <div class="mini-trend" aria-hidden="true"></div>
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="overview-title">
+          <div class="section-title">
+            <h3 id="overview-title">Cloud App Usage Overview</h3>
+            <span class="muted">Totals, trends, and categories</span>
+          </div>
+          <div class="card">
+            <div class="kpi-row">
+              <div class="kpi"><div><div class="kpi-title">Sanctioned apps</div><div class="muted">unique services</div></div><div class="kpi-value">72 <span class="delta up">▲ 4%</span></div></div>
+              <div class="kpi"><div><div class="kpi-title">Shadow apps</div><div class="muted">unique services</div></div><div class="kpi-value">184 <span class="delta up">▲ 6%</span></div></div>
+              <div class="kpi"><div><div class="kpi-title">Banned apps</div><div class="muted">unique services</div></div><div class="kpi-value">19 <span class="delta down">▼ 2%</span></div></div>
+            </div>
+            <div class="mini-trend" aria-label="adoption trend" title="Adoption trends (sanctioned vs shadow)"></div>
+            <div class="two-col" style="margin-top:10px">
+              <div class="card" style="background:transparent;border-color:var(--border)">
+                <div class="section-title"><h3>Usage by category</h3></div>
+                <table class="table" aria-label="Usage by category">
+                  <thead><tr><th>Category</th><th>Events</th><th>GB</th><th>Users</th></tr></thead>
+                  <tbody>
+                    <tr><td>Collaboration</td><td>84k</td><td>1.2 TB</td><td>1,142</td></tr>
+                    <tr><td>Storage</td><td>61k</td><td>980 GB</td><td>904</td></tr>
+                    <tr><td>DevTools</td><td>19k</td><td>220 GB</td><td>318</td></tr>
+                    <tr><td>Finance</td><td>12k</td><td>74 GB</td><td>167</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="card" style="background:transparent;border-color:var(--border)">
+                <div class="section-title"><h3>Adoption trends</h3></div>
+                <div class="mini-trend" aria-hidden="true"></div>
+                <div class="flex" style="margin-top:8px">
+                  <span class="badge"><span style="width:8px;height:8px;border-radius:999px;background:var(--info);display:inline-block"></span> Sanctioned</span>
+                  <span class="badge"><span style="width:8px;height:8px;border-radius:999px;background:var(--p2);display:inline-block"></span> Shadow</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="traffic-title">
+          <div class="section-title">
+            <h3 id="traffic-title">Traffic & Activity Metrics</h3>
+            <span class="muted">Uploads, downloads, top apps and actors</span>
+          </div>
+          <div class="two-col">
+            <div class="card">
+              <div class="section-title"><h3>Upload/Download volumes</h3></div>
+              <div class="mini-trend" aria-hidden="true"></div>
+              <div class="kpi-row" style="margin-top:8px">
+                <div class="kpi"><div class="kpi-title">Uploads</div><div class="kpi-value">1.6 TB</div></div>
+                <div class="kpi"><div class="kpi-title">Downloads</div><div class="kpi-value">2.1 TB</div></div>
+                <div class="kpi"><div class="kpi-title">95th percentile</div><div class="kpi-value">480 GB</div></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="section-title"><h3>Top apps by activity</h3></div>
+              <table class="table" aria-label="Top apps by activity">
+                <thead><tr><th>App</th><th>Events</th><th>GB</th><th>Users</th><th>Rep</th><th>State</th></tr></thead>
+                <tbody>
+                  <tr><td>DrivePro</td><td>24k</td><td>420</td><td>612</td><td><span class="pill" style="background:rgba(34,197,94,0.15)">88</span></td><td><span class="pill">Sanctioned</span></td></tr>
+                  <tr><td>QuickShare</td><td>19k</td><td>310</td><td>501</td><td><span class="pill p2">38</span></td><td><span class="pill">Shadow</span></td></tr>
+                  <tr><td>DevSync</td><td>11k</td><td>180</td><td>240</td><td><span class="pill" style="background:rgba(34,197,94,0.15)">74</span></td><td><span class="pill">Sanctioned</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <div class="section-title"><h3>Top actors by usage</h3></div>
+            <table class="table" aria-label="Top actors by usage">
+              <thead><tr><th>User/Token</th><th>Events</th><th>GB</th><th>Apps</th><th>Risk</th></tr></thead>
+              <tbody>
+                <tr><td>alex.chen</td><td>9,342</td><td>120</td><td>14</td><td><span class="pill p2">42</span></td></tr>
+                <tr><td>svc-build-bot</td><td>8,105</td><td>210</td><td>9</td><td><span class="pill">63</span></td></tr>
+                <tr><td>maria.g</td><td>7,201</td><td>86</td><td>11</td><td><span class="pill p3">58</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section aria-labelledby="drill-title">
+          <div class="section-title">
+            <h3 id="drill-title">Drill-down</h3>
+            <span class="muted">Investigate apps, users, alerts, files, and timeline</span>
+          </div>
+          <div class="tabs" role="tablist">
+            <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="panel-apps" id="tab-apps" data-tab="apps">Apps</button>
+            <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-users" id="tab-users" data-tab="users">Users</button>
+            <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-alerts" id="tab-alerts" data-tab="alerts">Alerts</button>
+            <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-files" id="tab-files" data-tab="files">Files</button>
+            <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-timeline" id="tab-timeline" data-tab="timeline">Activity Timeline</button>
+          </div>
+
+          <div id="panel-apps" class="panel active" role="tabpanel" aria-labelledby="tab-apps">
+            <div class="card">
+              <div class="section-title">
+                <h3>Apps</h3>
+                <div class="flex">
+                  <span class="pill">Filter: reputation < 40</span>
+                  <span class="pill">Scope: shadow</span>
+                </div>
+              </div>
+              <table class="table" aria-label="Apps table">
+                <thead>
+                  <tr>
+                    <th>App</th>
+                    <th>Category</th>
+                    <th>State</th>
+                    <th>Reputation</th>
+                    <th>Anomalies</th>
+                    <th>Alerts</th>
+                    <th>Upload GB</th>
+                    <th>Users</th>
+                    <th>First/Last seen</th>
+                    <th class="right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>QuickShare</td>
+                    <td>Storage</td>
+                    <td><span class="pill">Shadow</span></td>
+                    <td><span class="pill p2">38</span></td>
+                    <td>3</td>
+                    <td><span class="pill p1">2 open</span></td>
+                    <td>160</td>
+                    <td>214</td>
+                    <td>Apr 03 / Apr 10</td>
+                    <td class="right"><button class="btn">Block</button> <button class="btn">Request sanction</button></td>
+                  </tr>
+                  <tr>
+                    <td>ClipCloud</td>
+                    <td>Collab</td>
+                    <td><span class="pill">Shadow</span></td>
+                    <td><span class="pill p2">32</span></td>
+                    <td>2</td>
+                    <td><span class="pill p2">4 open</span></td>
+                    <td>48</td>
+                    <td>91</td>
+                    <td>Mar 26 / Apr 10</td>
+                    <td class="right"><button class="btn">Block</button> <button class="btn">Quarantine files</button></td>
+                  </tr>
+                  <tr>
+                    <td>DevSync</td>
+                    <td>DevTools</td>
+                    <td><span class="pill">Sanctioned</span></td>
+                    <td><span class="pill">74</span></td>
+                    <td>0</td>
+                    <td><span class="pill">0</span></td>
+                    <td>180</td>
+                    <td>240</td>
+                    <td>Jan 08 / Apr 10</td>
+                    <td class="right"><button class="btn">Open details</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="panel-users" class="panel" role="tabpanel" aria-labelledby="tab-users">
+            <div class="card">
+              <div class="section-title"><h3>Users</h3><span class="muted">Risk scores and anomalies</span></div>
+              <table class="table" aria-label="Users table">
+                <thead><tr><th>User</th><th>Dept</th><th>Devices</th><th>Anomalies</th><th>Alerts</th><th>Apps</th><th>Data GB</th><th>Risk</th><th class="right">Actions</th></tr></thead>
+                <tbody>
+                  <tr><td>alex.chen</td><td>Eng</td><td>3</td><td>2</td><td><span class="pill p1">1 P1</span></td><td>14</td><td>120</td><td><span class="pill p2">42</span></td><td class="right"><button class="btn">Require MFA</button> <button class="btn">Suspend</button></td></tr>
+                  <tr><td>maria.g</td><td>Sales</td><td>2</td><td>1</td><td><span class="pill p3">1 P3</span></td><td>11</td><td>86</td><td><span class="pill p3">58</span></td><td class="right"><button class="btn">Notify</button></td></tr>
+                  <tr><td>svc-build-bot</td><td>CI</td><td>1</td><td>0</td><td><span class="pill">0</span></td><td>9</td><td>210</td><td><span class="pill">63</span></td><td class="right"><button class="btn">Revoke tokens</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="panel-alerts" class="panel" role="tabpanel" aria-labelledby="tab-alerts">
+            <div class="card">
+              <div class="section-title"><h3>Alerts</h3><span class="muted">Severity, type, entity, status</span></div>
+              <table class="table" aria-label="Alerts table">
+                <thead><tr><th>Severity</th><th>Type</th><th>Entity</th><th>Status</th><th>Owner</th><th>SLA</th><th class="right">Actions</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="pill p1">P1</span></td><td>OAuth token abuse</td><td>alex.chen</td><td>Open</td><td>SecOps-1</td><td>01:12:33</td><td class="right"><button class="btn">Open</button> <button class="btn">Acknowledge</button></td></tr>
+                  <tr><td><span class="pill p2">P2</span></td><td>Impossible travel</td><td>maria.g</td><td>Ack</td><td>SecOps-2</td><td>—</td><td class="right"><button class="btn">Open</button></td></tr>
+                  <tr><td><span class="pill p3">P3</span></td><td>Mass download</td><td>svc-build-bot</td><td>Resolved</td><td>SecOps-1</td><td>—</td><td class="right"><button class="btn">Open</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="panel-files" class="panel" role="tabpanel" aria-labelledby="tab-files">
+            <div class="card">
+              <div class="section-title"><h3>Files</h3><span class="muted">Classification and sharing</span></div>
+              <table class="table" aria-label="Files table">
+                <thead><tr><th>Name</th><th>Owner</th><th>App</th><th>Class</th><th>Sharing</th><th>DLP</th><th>Modified</th><th>Risk</th><th class="right">Actions</th></tr></thead>
+                <tbody>
+                  <tr><td>Q2_PII_extract.csv</td><td>alex.chen</td><td>QuickShare</td><td>PII</td><td>Public</td><td><span class="pill p1">Hit</span></td><td>Apr 10</td><td><span class="pill p1">High</span></td><td class="right"><button class="btn">Revoke share</button> <button class="btn">Quarantine</button></td></tr>
+                  <tr><td>Customer_List.xlsx</td><td>maria.g</td><td>DrivePro</td><td>Confidential</td><td>External</td><td><span class="pill p2">Hit</span></td><td>Apr 09</td><td><span class="pill p2">Med</span></td><td class="right"><button class="btn">Notify owner</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="panel-timeline" class="panel" role="tabpanel" aria-labelledby="tab-timeline">
+            <div class="card">
+              <div class="section-title"><h3>Activity timeline</h3><span class="muted">Pivot by user/app/geo/device</span></div>
+              <div class="mini-trend" aria-hidden="true"></div>
+              <table class="table" aria-label="Activity timeline table" style="margin-top:10px">
+                <thead><tr><th>Time</th><th>User</th><th>App</th><th>Action</th><th>Geo</th><th>Device</th><th>Anomaly</th><th>Details</th></tr></thead>
+                <tbody>
+                  <tr><td>10:21</td><td>alex.chen</td><td>QuickShare</td><td>Upload</td><td>US</td><td>Mac</td><td><span class="pill p1">OAuth abuse</span></td><td>token=gh_***42</td></tr>
+                  <tr><td>09:58</td><td>svc-build-bot</td><td>DevSync</td><td>Download</td><td>US</td><td>Linux</td><td><span class="pill">—</span></td><td>artifact=build#1092</td></tr>
+                  <tr><td>08:33</td><td>maria.g</td><td>DrivePro</td><td>Share</td><td>DE</td><td>Win</td><td><span class="pill p2">Impossible travel</span></td><td>ip=87.142.*</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const tabs = document.querySelectorAll('.tab-btn');
+      const panels = document.querySelectorAll('.panel');
+      tabs.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.tab;
+          tabs.forEach(b => { b.classList.toggle('active', b === btn); b.setAttribute('aria-selected', b === btn ? 'true' : 'false'); });
+          panels.forEach(p => p.classList.toggle('active', p.id === 'panel-' + target));
+          panels.forEach(p => { if (p.id === 'panel-' + target) { p.setAttribute('tabindex', '-1'); p.focus({ preventScroll: true }); } });
+        });
+      });
+
+      // Show P1 banner if there are open P1s (>0)
+      const p1Count = 6; // placeholder
+      if (p1Count > 0) {
+        const banner = document.getElementById('p1-banner');
+        if (banner) banner.classList.add('show');
+      }
+    </script>
+  </body>
+  </html>
+
